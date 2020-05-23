@@ -266,16 +266,23 @@ char *intal_pow(const char *intal1, unsigned int n)
 
 char *intal_gcd(const char *intal1, const char *intal2)
 {
-  int equality=intal_compare(intal1,intal2);
-  if(equality == 0)
-    return intal1;
-  if(equality>0)
-    return intal_gcd(intal_diff(intal1,intal2),intal2);
-  else
+  char *int1 = (char *)malloc((strlen(intal1) + 1) * sizeof(char));
+  strcpy(int1, intal1);
+  char *int2 = (char *)malloc((strlen(intal2) + 1) * sizeof(char));
+  strcpy(int2, intal2);
+
+  int flag = strcmp(int1, "0");
+  while (flag != 0)
   {
-    return intal_gcd(intal1,intal_diff(intal2,intal1));
+    char *temp = int2;
+    int2 = int1;
+    int1 = intal_mod(temp, int1);
+
+    flag = strcmp(int1, "0");
   }
-  
+
+  free(int1);
+  return int2;
 }
 
 char *intal_fibonacci(unsigned int n)
@@ -369,25 +376,27 @@ char *intal_mod(const char *intal1, const char *intal2)
 
 int intal_max(char **arr, int n)
 {
-  char *max=malloc(sizeof(char)*2);
-  max[0]=0+'0';max[1]='\0';
-  int maxI=0;
-  for(int i=0;i<n;i++)
+  int leng = snprintf(NULL, 0, "%d", 0);
+  char *max = malloc(leng + 1);
+  snprintf(max, leng + 1, "%d", 0);
+  int maxI = 0;
+  for (int i = 0; i < n; i++)
   {
-    int res=intal_compare(max,arr[i]);
-    if(res<0)
+    int res = intal_compare(max, arr[i]);
+    if (res < 0)
     {
-      max=arr[i];
-      maxI=i;
+      max = arr[i];
+      maxI = i;
     }
   }
+  free(max);
   return maxI;
 }
 
 int intal_min(char **arr, int n)
 {
   char *min = malloc(sizeof(char) * 1001);
-  min = "1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+  min = "100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
   int minI = 0;
   for (int i = 0; i < n; i++)
@@ -399,6 +408,7 @@ int intal_min(char **arr, int n)
       minI = i;
     }
   }
+  free(min);
   return minI;
 }
 
@@ -458,9 +468,28 @@ static int custom_binsearch(int n, char *arr[n], const char *key, int start, int
 
 int intal_binsearch(char **arr, int n, const char *key)
 {
-  int start = 0, end = n - 1, mid;
-  int res = custom_binsearch(n, arr, key, start, end);
-  return res;
+  int start = 0;
+  int end = n - 1;
+
+  while (start <= end)
+  {
+    int mid = (start + end) / 2;
+    int cmp = intal_compare(arr[mid], (char *)key);
+    if (cmp == 0)
+    {
+      return mid;
+    }
+    else if (cmp > 0)
+    {
+      end = mid - 1;
+    }
+    else
+    {
+      start = mid + 1;
+    }
+  }
+
+  return -1;
 }
 
 void intal_merge(int n, char *arr[n], int start1, int end1, int start2, int end2)
@@ -518,93 +547,144 @@ void intal_sort(char **arr, int n)
   intal_mergesort(n, arr, 0, n - 1);
 }
 
-char *intal_bincoeff(unsigned int n, unsigned int k)
+/*
+int partition(char **arr, int l, int h)
 {
-  char **C = malloc(sizeof(char *) * (k + 1));
-  for (int i = 0; i < k + 2; i++)
-  {
-    C[i] = malloc(sizeof(char) * 1000000000000000);
-    C[i] = "0\0";
-  }
+  int i = l - 1;
+  char *pivot = arr[h];
 
-  C[k + 1] = "\0";
-  C[0] = "1";
-  for (int i = 1; i <= n; i++)
+  for (int j = l; j < h; ++j)
   {
-    int mini = i;
-    if (i > k)
-      mini = k;
-    for (int j = mini; j > 0; j--)
+    if (intal_compare(arr[j], pivot) < 0)
     {
-      C[j] = intal_add(C[j], C[j - 1]);
+      ++i;
+      char *tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
     }
   }
-  return C[k];
+
+  char *tmp = arr[i + 1];
+  arr[i + 1] = arr[h];
+  arr[h] = tmp;
+
+  return (i + 1);
+}
+
+void quicksort(char **arr, int l, int h)
+{
+  if (l < h)
+  {
+    int pi = partition(arr, l, h);
+    quicksort(arr, l, pi - 1);
+    quicksort(arr, pi + 1, h);
+  }
+}
+
+void intal_sort(char **arr, int n)
+{
+  quicksort(arr, 0, n - 1);
+}
+*/
+
+char *intal_bincoeff(unsigned int n, unsigned int k)
+{
+  char **c = (char **)malloc((k + 1) * sizeof(char *));
+  for (int i = 0; i < k + 1; ++i)
+  {
+    c[i] = (char *)malloc(2 * sizeof(char));
+    c[i][0] = '0';
+    c[i][1] = '\0';
+  }
+
+  c[0][0] = '1';
+
+  for (int i = 1; i < (n + 1); i++)
+  {
+    int j = (i > k) ? k : i;
+    while (j > 0)
+    {
+      char *tmp = c[j];
+      c[j] = intal_add(c[j], c[j - 1]);
+      j--;
+    }
+  }
+
+  char *res = (char *)malloc((strlen(c[k]) + 1) * sizeof(char));
+  strcpy(res, c[k]);
+
+  for (int i = 0; i < (k + 1); i++)
+  {
+    free(c[i]);
+  }
+  free(c);
+
+  return res;
 }
 
 static char *intal_div2(const char *intal1)
-{
-  int i = 0, carry = 0;
-  char *res = malloc(sizeof(char) * (strlen(intal1) + 1));
-  int resc = 0, flag = 1;
-  while (intal1[i] != '\0')
   {
-    int num = intal1[i] - '0';
-    num = num + carry * 10;
+    int i = 0, carry = 0;
+    char *res = malloc(sizeof(char) * (strlen(intal1) + 1));
+    int resc = 0, flag = 1;
+    while (intal1[i] != '\0')
+    {
+      int num = intal1[i] - '0';
+      num = num + carry * 10;
 
-    carry = 0;
-    int cal = num / 2;
-    if (num % 2 != 0)
-      carry = 1;
-    res[resc++] = cal + '0';
-    i++;
+      carry = 0;
+      int cal = num / 2;
+      if (num % 2 != 0)
+        carry = 1;
+      res[resc++] = cal + '0';
+      i++;
+    }
+    res[resc] = '\0';
+    char *res2 = malloc(sizeof(char) * (strlen(intal1) + 1));
+    strncpy(res2, res + 1, resc - 1);
+    res2[resc - 1] = '\0';
+    free(res);
+    return res2;
   }
-  res[resc] = '\0';
-  char *res2 = malloc(sizeof(char) * (strlen(intal1) + 1));
-  strncpy(res2, res + 1, resc - 1);
-  res2[resc - 1] = '\0';
-  free(res);
-  return res2;
-}
 
 char *coin_row_problem(char **arr, int n)
-{
-  char **f = malloc((n + 1) * sizeof(char *));
-  f[0] = malloc(2 * sizeof(char));
-  f[0][0] = '\0';
-  f[0][1] = '\0';
-
-  for (int i = 0; i < n; i++)
   {
-    f[i + 1] = malloc((strlen(arr[i]) + 1) * sizeof(char));
-    strcpy(f[i + 1], arr[i]);
-  }
+    char **f = malloc((n + 1) * sizeof(char *));
+    f[0] = malloc(2 * sizeof(char));
+    f[0][0] = '\0';
+    f[0][1] = '\0';
 
-  for (int i = 2; i < n + 1; i++)
-  {
-    char *val = intal_add(arr[i - 1], f[i - 2]);
-    if (intal_compare(val, f[i - 1]) > 0)
+    for (int i = 0; i < n; i++)
     {
-      char *tmp = f[i];
-      f[i] = val;
-      free(tmp);
+      f[i + 1] = malloc((strlen(arr[i]) + 1) * sizeof(char));
+      strcpy(f[i + 1], arr[i]);
     }
-    else
+
+    for (int i = 2; i < n + 1; i++)
+    {
+      char *val = intal_add(arr[i - 1], f[i - 2]);
+      if (intal_compare(val, f[i - 1]) > 0)
+      {
+        char *tmp = f[i];
+        f[i] = val;
+        free(tmp);
+      }
+      else
+      {
+        free(f[i]);
+        f[i] = malloc((strlen(f[i - 1]) + 1) * sizeof(char));
+        strcpy(f[i], f[i - 1]);
+        free(val);
+      }
+    }
+
+    char *res = malloc((strlen(f[n]) + 1) * sizeof(char));
+    strcpy(res, f[n]);
+
+    for (int i = 0; i < n + 1; i++)
     {
       free(f[i]);
-      f[i] = malloc((strlen(f[i - 1]) + 1) * sizeof(char));
-      strcpy(f[i], f[i - 1]);
-      free(val);
     }
+    free(f);
+    return res;
   }
-
-  char *result = malloc((strlen(f[n]) + 1) * sizeof(char));
-  strcpy(result, f[n]);
-
-  for (int i = 0; i < n + 1; i++)
-  {
-    free(f[i]);
-  }
-  free(f);
-  return result;
-}
